@@ -83,7 +83,7 @@ STR;
                             Format::formatResponseData($users);
                             $user = $users[0];
                             $userSubscriptions=array();
-                            return General::getResponse($response->write(SuccessObject::getSingleUsersPackagesSuccessObjects(User::getUserArray($user),NewUser::getUserProfileArray($user),$userSubscriptions,Message::getMessage('M_INSERT'))));
+                            return General::getResponse($response->write(SuccessObject::getSingleUsersPackagesSuccessObjects(User::getUserArray($user),User::getUserProfileArray($user),$userSubscriptions,Message::getMessage('M_INSERT'))));
                         } else {
                             return General::getResponse($response->write(ErrorObject::getUserErrorObject(Message::getMessage('E_NO_INSERT'))));
                         }
@@ -185,12 +185,12 @@ STR;
                        $results = $db->run($sql,$bind);                                    
                         if ($results) {                        
                             return General::getResponse($response->write(NewSignInService::localLogInUsingMobileNoAndACR($results,$db)));
-                        }else if (NewUser::insertUserData($db, $user) > 0) {
-                            NewUser::insertUserProfileData($db, $user);
+                        }else if (User::insertUserData($db, $user) > 0) {
+                            User::insertUserProfileData($db, $user);
                             $users[0] = $user;
                             Format::formatResponseData($users);
                             $user = $users[0];
-                            return General::getResponse($response->write(SuccessObject::getSingleUsersPackagesSuccessObjects(User::getUserArray($user),null,null,Message::getMessage('M_INSERT'))));
+                            return General::getResponse($response->write(SuccessObject::getSingleUsersPackagesSuccessObjects(User::getUserArray($user),User::getUserProfileArray($user),null,Message::getMessage('M_INSERT'))));
                         } else {
                             return General::getResponse($response->write(ErrorObject::getUserErrorObject(Message::getMessage('E_NO_INSERT'))));
                         }
@@ -210,8 +210,7 @@ STR;
     public static function localLogInUsingMobileNoAndACR($results,$db)
     {
         try {
-        $results = $results[0];//;		
-        $currentDate = new DateTime();       
+        $results = $results[0];//;         
         // To Get Object From Array   			
         $userSubscriptions =NewSignInService::getUserPackageSubscription($results['UserId'],$db);
         Format::formatResponseData($userSubscriptions);	
