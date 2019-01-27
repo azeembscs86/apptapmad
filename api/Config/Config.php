@@ -30,11 +30,12 @@ class Config {
 	 */
         
 	public static function getDataBase() {
-		$dsn = 'mysql:host=tapmaddatabase.cos9u8eatv1k.eu-central-1.rds.amazonaws.com;port=30000;dbname=winettv';
-		$username = 'pipay';
-		$password = 'Ghdyuwi345Tys45';
+		$dsn = 'localhost';
+                $dbname='tapmaddb';
+		$username = 'root';
+		$password = '';
 		
-		$pdodb = new pdodb ( $dsn, $username, $password );
+		$pdodb = new pdodb ("mysql:host=$dsn;dbname=$dbname", $username, $password );
 		$pdodb->exec("SET CHARACTER SET utf8");
 		return $pdodb;
 	}

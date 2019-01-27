@@ -16,64 +16,33 @@ class NewSignInService extends Config
 {
     public static function NewsignUpORSignInUsingMobileNo(Request $request, Response $response)
     {   
+        
             $Version = filter_var(isset($request->getParsedBody()['Version']) ? $request->getParsedBody()['Version'] : NULL, FILTER_SANITIZE_STRING);
             $Language = filter_var(isset($request->getParsedBody()['Language']) ? $request->getParsedBody()['Language'] : NULL, FILTER_SANITIZE_STRING);
             parent::setConfig($Language);
             $Platform = filter_var(isset($request->getParsedBody()['Platform']) ? $request->getParsedBody()['Platform'] : NULL, FILTER_SANITIZE_STRING);
             // Users Table Data
             $user['UserUsername'] = ltrim(filter_var(isset($request->getParsedBody()['MobileNo']) ? $request->getParsedBody()['MobileNo'] : NULL, FILTER_SANITIZE_STRING), '0');
-            $user['UserUsername'] = ltrim($user['UserUsername'], '+92');
-            $user['UserSubscriptionAutoRenew'] = 1;
+            $user['UserUsername'] = ltrim($user['UserUsername'], '+92');           
     
             $user['UserPassword'] = md5('TAPMAD999');
     
             $currentDate = new DateTime();
             $user['UserLastLoginAt'] = $currentDate->format('Y-m-d H:i:s');
-            $user['UserEmail'] = NULL;
+            
             $user['UserToken'] = General::createGUID();
             // $user ['UserToken'] = 'a6f452ec3293d7fb72c5b677257b20ectmp';
-            $user['UserDeviceId'] = filter_var(isset($request->getParsedBody()['DeviceID']) ? $request->getParsedBody()['DeviceID'] : NULL, FILTER_SANITIZE_STRING);
             $user['UserIsFree'] = '1';
             $user['UserIsActive'] = '1';
-            $user['UserActivationCode'] = null;
-            $user['UserIsPublisher'] = '0';
-            $user['UserNetwork'] = 'other';
             $user['UserCountryCode'] = 'PK';
             $user['UserIPAddress'] = General::getUserIP();
-            $user['UserTypeId'] = '0';
-            $user['UserIsPassChanged'] = '0';
-    
-            // User Profiles Table Data
-            $user['UserProfileFullName'] = "Anonymous";
-            $user['UserProfileFirstName'] = NULL;
-            $user['UserProfileLastName'] = NULL;
             $user['UserProfileMobile'] = filter_var(isset($request->getParsedBody()['MobileNo']) ? $request->getParsedBody()['MobileNo'] : NULL, FILTER_SANITIZE_STRING);
             // TODO: Implement Api Resolver
-            $user['UserProfileCity'] = NULL;
-            $user['UserProfileState'] = NULL;
-            $user['UserProfileCountry'] = NULL;
-            $user['UserProfileGender'] = 'Male';
-            $user['UserProfileDOB'] = '1986-02-23';
-            $currentDate = new DateTime();
-            $user['UserProfileRegistrationDate'] = $currentDate->format('Y-m-d H:i:s');
+           
             $user['UserProfilePlatform'] = filter_var(isset($request->getParsedBody()['Platform']) ? $request->getParsedBody()['Platform'] : NULL, FILTER_SANITIZE_STRING);
-            $user['UserProfileRefCode'] = filter_var(isset($request->getParsedBody()['RefCode']) ? $request->getParsedBody()['RefCode'] : NULL, FILTER_SANITIZE_STRING);
-            $user['UserProfileRefCode2'] = filter_var(isset($request->getParsedBody()['RefCode2']) ? $request->getParsedBody()['RefCode2'] : NULL, FILTER_SANITIZE_STRING);
             $user['UserProfilePicture'] = NULL;
-            $user['UserProfileMobileNetwork'] = NULL;
-    
-            // User Subscriptions Table Data
-            $user['UserSubscriptionIsTempUser'] = 0;
-            $user['UserSubscriptionPackageId'] = 10;
-            $user['UserSubscriptionStartDate'] = $currentDate->format('Y-m-d H:i:s');
-            // $currentDate = $currentDate->modify ( '+7 day' );
-            $currentDate = $currentDate->modify('-5 minutes');
-            $user['UserSubscriptionExpiryDate'] = $currentDate->format('Y-m-d H:i:s');
-            $user['UserSubscriptionIsExpired'] = true;
-            $user['UserSubscriptionTVExpiryDate'] = NULL;
-            $user['UserSubscriptionMaxConcurrentConnections'] = 6;
-            $user['UserSubscriptionAutoRenew'] = 0;
-            $user['UserSubscriptionDetails'] = NULL;
+            $user['UserProfileMobileNetwork'] = NULL;    
+           
     
             // --------- PARAMETERS VALIDATION
             $MobileNoValidator = v::Digit()->noWhitespace()->length(10, 10);
@@ -81,7 +50,7 @@ class NewSignInService extends Config
                 return General::getResponse($response->write(ErrorObject::getUserErrorObject(Message::getMessage('E_INVALID_PARAMS'))));
             }
             $user['UserUsername'] = 'T' . $user['UserUsername'];
-    
+          
             try {
                 $db = parent::getDataBase();
                 switch ($Version) {
@@ -91,30 +60,31 @@ class NewSignInService extends Config
                         $bind = array(
                             ':Username' => $user['UserUsername']
                         );
-                        
+                          
                         $sql = <<<STR
                             SELECT  UserId,
                                     UserUsername,
                                     UserIsFree,
                                     UserIsActive,
                                     UserCountryCode
-                            FROM newusers
+                            FROM users
                             WHERE UserUsername=:Username
                                         
 STR;
                         
                        $results = $db->run($sql,$bind);
-                               
-                        if ($results) {                        
+                       
+                        if ($results) {
                             return General::getResponse($response->write(NewSignInService::localLogInUsingMobileNo($results,$db)));
-                        } else if (NewUser::insertUserData($db, $user) > 0) {
-                            NewUser::insertUserProfileData($db, $user);
+                        } else if (User::insertUserData($db, $user) > 0) {
+                            User::insertUserProfileData($db, $user);
                             //User::insertUserSubscriptionData($db, $user); 
     
                             $users[0] = $user;
                             Format::formatResponseData($users);
                             $user = $users[0];
-                            return General::getResponse($response->write(SuccessObject::getSingleUsersPackagesSuccessObjects(NewUser::getUserArray($user),NewUser::getUserProfileArray($user),null,Message::getMessage('M_INSERT'))));
+                            $userSubscriptions=array();
+                            return General::getResponse($response->write(SuccessObject::getSingleUsersPackagesSuccessObjects(User::getUserArray($user),NewUser::getUserProfileArray($user),$userSubscriptions,Message::getMessage('M_INSERT'))));
                         } else {
                             return General::getResponse($response->write(ErrorObject::getUserErrorObject(Message::getMessage('E_NO_INSERT'))));
                         }
@@ -133,25 +103,12 @@ STR;
     public static function localLogInUsingMobileNo($results,$db)
     {   
         try {
-        $results = $results[0];//;		
-        $currentDate = new DateTime();
-        $update = array(
-            "UserLastLoginAt" => $currentDate->format('Y-m-d H:i:s')
-        );
-        $bind = array(
-        ":Username" => $results['UserUsername']
-        );
-        $db->update('newusers', $update, 'UserUsername=:Username', $bind);
-        
+        $results = $results[0];//;
         // To Get Object From Array   			
-        $userSubscriptions =NewSignInService::getUserPackageSubscription($results['UserId'],$db);
-    // print_r( $userSubscriptions);
-       
-        Format::formatResponseData($userSubscriptions);	
-        
+        $userSubscriptions =NewSignInService::getUserPackageSubscription($results['UserId'],$db);    
+        Format::formatResponseData($userSubscriptions);	        
         $userprofile=NewSignInService::getUserProfileArray($results['UserId'],$db);   
-       // print_r($userSubscriptions);
-        //exit;
+       
         return SuccessObject::getSingleUsersPackagesSuccessObjects(User::getUserArray($results),$userprofile,$userSubscriptions, Message::getMessage('M_LOGIN_SIGNUP'));
         } catch (PDOException $e) {
                 return ErrorObject::getUserErrorObject(Message::getPDOMessage($e));
@@ -170,26 +127,21 @@ STR;
             $Platform = filter_var(isset($request->getParsedBody()['Platform']) ? $request->getParsedBody()['Platform'] : NULL, FILTER_SANITIZE_STRING);
             // Users Table Data
             $user['UserUsername'] = filter_var(isset($request->getParsedBody()['ACR']) ? $request->getParsedBody()['ACR'] : NULL, FILTER_SANITIZE_STRING);
-            $user['UserSubscriptionAutoRenew'] = 1;
+           
     
             $user['UserPassword'] = md5('TAPMAD999');
     
             $currentDate = new DateTime();
-            $user['UserLastLoginAt'] = $currentDate->format('Y-m-d H:i:s');
-            $user['UserEmail'] = NULL;
+            $user['UserLastLoginAt'] = $currentDate->format('Y-m-d H:i:s');            
             $user['UserToken'] = General::createGUID();
             // $user ['UserToken'] = 'a6f452ec3293d7fb72c5b677257b20ectmp';
             $user['UserDeviceId'] = filter_var(isset($request->getParsedBody()['DeviceID']) ? $request->getParsedBody()['DeviceID'] : NULL, FILTER_SANITIZE_STRING);
             $user['UserIsFree'] = '1';
             $user['UserIsActive'] = '1';
-            $user['UserActivationCode'] = null;
-            $user['UserIsPublisher'] = '0';
-            $user['UserNetwork'] = 'other';
-            $user['UserCountryCode'] = 'PK';
+            
+            
             $user['UserIPAddress'] = General::getUserIP();
-            $user['UserTypeId'] = '0';
-            $user['UserIsPassChanged'] = '0';
-    
+            
             // User Profiles Table Data
             $user['UserProfileFullName'] = 'NULL';
             $user['UserProfileFirstName'] = NULL;
@@ -209,18 +161,7 @@ STR;
             $user['UserProfilePicture'] = NULL;
             $user['UserProfileMobileNetwork'] = NULL;
     
-            // User Subscriptions Table Data
-            $user['UserSubscriptionIsTempUser'] = 0;
-            $user['UserSubscriptionPackageId'] = 10;
-            $user['UserSubscriptionStartDate'] = $currentDate->format('Y-m-d H:i:s');
-            // $currentDate = $currentDate->modify ( '+7 day' );
-            $currentDate = $currentDate->modify('-5 minutes');
-            $user['UserSubscriptionExpiryDate'] = $currentDate->format('Y-m-d H:i:s');
-            $user['UserSubscriptionIsExpired'] = true;
-            $user['UserSubscriptionTVExpiryDate'] = NULL;
-            $user['UserSubscriptionMaxConcurrentConnections'] = 6;
-            $user['UserSubscriptionAutoRenew'] = 0;
-            $user['UserSubscriptionDetails'] = NULL;
+            
     
             // --------- PARAMETERS VALIDATION
             $ACRValidator = v::Alnum()->noWhitespace()->length(15, 15);
@@ -246,7 +187,7 @@ STR;
                             UserUsername,
                             UserIsFree,
                             UserIsActive
-                            FROM newusers
+                            FROM users
                             WHERE UserUsername = :Username OR UserACR = :UserACR
                                         
 STR;
@@ -294,7 +235,7 @@ STR;
         $userSubscriptions =NewSignInService::getUserPackageSubscription($results['UserId'],$db);
         Format::formatResponseData($userSubscriptions);	
         $userprofile=NewSignInService::getUserProfileArray($results['UserId'],$db);    
-        return SuccessObject::getSingleUsersPackagesSuccessObjects(NewUser::getUserArray($results),$userprofile,$userSubscriptions, Message::getMessage('M_LOGIN_SIGNUP'));
+        return SuccessObject::getSingleUsersPackagesSuccessObjects(User::getUserArray($results),$userprofile,$userSubscriptions, Message::getMessage('M_LOGIN_SIGNUP'));
         } catch (PDOException $e) {
                 return ErrorObject::getUserErrorObject(Message::getPDOMessage($e));
         } finally {
@@ -314,7 +255,7 @@ STR;
                       UserProfileDOB,
                       UserProfilePicture
                        
-            FROM usernprofiles 
+            FROM userprofiles 
             WHERE UserProfileUserId=:UserId
 STR;
             
@@ -337,14 +278,15 @@ STR;
             $sql = <<<STR
                     SELECT     
                         
-                        UserPackageCode As UserPackageType,                        
+                        UserPackageCode As UserPackageType,   
+                        PackageName AS PackageName,   
                         UserSubscriptionStartDate,
                         UserSubscriptionExpiryDate,
-                        IF ( TIMESTAMPDIFF(SECOND,NOW(), usersubscriptions.UserSubscriptionExpiryDate) > 0 , 0, 1 ) As UserSubscriptionIsExpired
-                        FROM usernsubscriptions                            
+                        IF (TIMESTAMPDIFF(SECOND,NOW(),UserSubscriptionExpiryDate) > 0 , 0, 1 ) As IsExpiredPackage
+                        FROM usersubscriptions                            
     
                         WHERE UserSubscriptionUserId=:UserId
-                       AND UserSubscriptionIsTempUser=0 AND UserSubscriptionPackageId=10 AND UserPackageCode IS NOT NULL
+                       AND UserSubscriptionIsTempUser=0
 STR;
                         
                         $bind = array(
