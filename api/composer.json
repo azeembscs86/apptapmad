@@ -1,0 +1,9 @@
+{
+    "require": {
+        "slim/slim": "^3.0",
+        "phpmailer/phpmailer": "^5.2",
+        "tuupola/slim-jwt-auth": "^2.3",
+        "twilio/sdk": "^5.7",
+        "monolog/monolog": "^1.22"		
+    }
+}
