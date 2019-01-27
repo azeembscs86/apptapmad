@@ -133,12 +133,13 @@ STR;
                    
             $user['UserToken'] = General::createGUID();
             // $user ['UserToken'] = 'a6f452ec3293d7fb72c5b677257b20ectmp';
-            $user['UserDeviceId'] = filter_var(isset($request->getParsedBody()['DeviceID']) ? $request->getParsedBody()['DeviceID'] : NULL, FILTER_SANITIZE_STRING);
+            
             $user['UserIsFree'] = '1';
             $user['UserIsActive'] = '1';
             
             
-            $user['UserIPAddress'] = General::getUserIP();
+           $user['UserCountryCode'] = 'PK';
+           $user['UserIPAddress'] = General::getUserIP();
             
             // User Profiles Table Data
             
@@ -174,7 +175,8 @@ STR;
                             SELECT  UserId AS UserId,
                             UserUsername,
                             UserIsFree,
-                            UserIsActive
+                            UserIsActive,
+                            UserCountryCode    
                             FROM users
                             WHERE UserUsername = :Username OR UserACR = :UserACR
                                         
