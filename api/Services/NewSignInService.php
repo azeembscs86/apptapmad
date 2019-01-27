@@ -40,8 +40,7 @@ class NewSignInService extends Config
             // TODO: Implement Api Resolver
            
             $user['UserProfilePlatform'] = filter_var(isset($request->getParsedBody()['Platform']) ? $request->getParsedBody()['Platform'] : NULL, FILTER_SANITIZE_STRING);
-            $user['UserProfilePicture'] = NULL;
-            $user['UserProfileMobileNetwork'] = NULL;    
+            $user['UserProfilePicture'] = NULL;            
            
     
             // --------- PARAMETERS VALIDATION
@@ -131,8 +130,7 @@ STR;
     
             $user['UserPassword'] = md5('TAPMAD999');
     
-            $currentDate = new DateTime();
-            $user['UserLastLoginAt'] = $currentDate->format('Y-m-d H:i:s');            
+                   
             $user['UserToken'] = General::createGUID();
             // $user ['UserToken'] = 'a6f452ec3293d7fb72c5b677257b20ectmp';
             $user['UserDeviceId'] = filter_var(isset($request->getParsedBody()['DeviceID']) ? $request->getParsedBody()['DeviceID'] : NULL, FILTER_SANITIZE_STRING);
@@ -143,23 +141,13 @@ STR;
             $user['UserIPAddress'] = General::getUserIP();
             
             // User Profiles Table Data
-            $user['UserProfileFullName'] = 'NULL';
-            $user['UserProfileFirstName'] = NULL;
-            $user['UserProfileLastName'] = NULL;
+            
             $user['UserProfileMobile'] = filter_var(isset($request->getParsedBody()['MobileNo']) ? $request->getParsedBody()['MobileNo'] : NULL, FILTER_SANITIZE_STRING);
             // TODO: Implement Api Resolver
-            $user['UserProfileCity'] = NULL;
-            $user['UserProfileState'] = NULL;
-            $user['UserProfileCountry'] = 'PK';
-            $user['UserProfileGender'] = 'Male';
-            $user['UserProfileDOB'] = '1986-02-23';
-            $currentDate = new DateTime();
-            $user['UserProfileRegistrationDate'] = $currentDate->format('Y-m-d H:i:s');
+            // TODO: Implement Api Resolver
+           
             $user['UserProfilePlatform'] = filter_var(isset($request->getParsedBody()['Platform']) ? $request->getParsedBody()['Platform'] : NULL, FILTER_SANITIZE_STRING);
-            $user['UserProfileRefCode'] = filter_var(isset($request->getParsedBody()['RefCode']) ? $request->getParsedBody()['RefCode'] : NULL, FILTER_SANITIZE_STRING);
-            $user['UserProfileRefCode2'] = filter_var(isset($request->getParsedBody()['RefCode2']) ? $request->getParsedBody()['RefCode2'] : NULL, FILTER_SANITIZE_STRING);
-            $user['UserProfilePicture'] = NULL;
-            $user['UserProfileMobileNetwork'] = NULL;
+            $user['UserProfilePicture'] = NULL;      
     
             
     
@@ -221,16 +209,7 @@ STR;
     {
         try {
         $results = $results[0];//;		
-        $currentDate = new DateTime();
-        $update = array(
-            "UserLastLoginAt" => $currentDate->format('Y-m-d H:i:s')
-        );
-        $bind = array(
-                ":Username" => $results['UserUsername'],
-                ":UserACR" => $results['UserUsername']
-        );
-        
-        $db->update('newusers', $update, 'UserUsername=:Username OR UserACR = :UserACR', $bind);
+        $currentDate = new DateTime();       
         // To Get Object From Array   			
         $userSubscriptions =NewSignInService::getUserPackageSubscription($results['UserId'],$db);
         Format::formatResponseData($userSubscriptions);	
