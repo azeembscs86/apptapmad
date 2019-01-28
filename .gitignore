@@ -8,6 +8,8 @@
 bin/
 api/vendor
 geoip/
+pic/
+log/
 tmp/
 *.tmp
 *.bak
@@ -220,4 +222,6 @@ pip-log.txt
 nbproject/project.properties
 *.html
 api/web.config
+pic/
 *.properties
+/nbproject/private/
